@@ -108,10 +108,19 @@ const PRESETS = {
      material: [
        "Yellowed Newsprint", "Glossy Magazine Paper", "Crumpled Paper", "Thick Cardstock", 
        "Old Parchment", "Blueprint Paper", "Polaroid Film", "Holographic Foil", 
-       "Canvas Texture", "Cardboard", "Vellum", "Matte Photo Paper"
-     ]
-    };
-// --- HELPER FUNCTIONS ---
+           "Canvas Texture", "Cardboard", "Vellum", "Matte Photo Paper"
+         ]
+        };
+       
+        const RECIPES = [
+         { name: "Cinematic Portrait", icon: "📸", data: { medium: "Photography", style: "Realistic", lighting: "Rembrandt Lighting", camera: "85mm Portrait Lens", composition: "Rule of Thirds", mood: "Mysterious" } },
+         { name: "Pixar 3D Character", icon: "🧸", data: { medium: "3D Render", style: "Pixar Style", lighting: "Studio Softbox", resolution: "Unreal Engine 5", mood: "Happy" } },
+         { name: "Cyberpunk City", icon: "🌃", data: { medium: "Digital Painting", style: "Cyberpunk", lighting: "Neon Lights", time: "Midnight", mood: "Energetic", era: "Futuristic" } },
+         { name: "Vintage Travel Poster", icon: "📜", data: { documentType: "Movie Poster", medium: "Vector Art", style: "Minimalist", era: "1950s Americana", typography: "Bold Sans-Serif Headline", material: "Thick Cardstock" } },
+         { name: "Oil Masterpiece", icon: "🎨", data: { medium: "Oil on Canvas", style: "Impressionism", artist: "Van Gogh", material: "Canvas Texture", lighting: "Natural Light" } }
+        ];
+       
+        // --- HELPER FUNCTIONS ---
 
 const generateYaml = (data) => {
  return Object.entries(data)
@@ -323,87 +332,103 @@ export default function App() {
  const [aiError, setAiError] = useState(null);
  const [polishedPrompt, setPolishedPrompt] = useState("");
  
-   const [formData, setFormData] = useState({
-     subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
-     composition: "", resolution: "", colorPalette: "", mood: "", 
-     time: "", season: "", aspectRatio: "", stylize: 50, seed: "",
-     documentType: "", typography: "", era: "", material: ""
-   });
- 
-   useEffect(() => {
-     const storedKey = localStorage.getItem('gemini_api_key');
-     const storedModel = localStorage.getItem('gemini_api_model');
-     if (storedKey) setApiKey(storedKey);
-     if (storedModel) setApiModel(storedModel);
-   }, []);
- 
-   const handleAccordion = (id) => setActiveSection(prev => prev === id ? null : id);
-   const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
- 
-   const saveSettings = (key, model) => {
-     localStorage.setItem('gemini_api_key', key);
-     localStorage.setItem('gemini_api_model', model);
-     setApiKey(key);
-     setApiModel(model);
-     setShowApiModal(false);
-   };
- 
-   const randomizeField = (field) => {
-     const opts = PRESETS[field];
-     if (opts) updateField(field, opts[Math.floor(Math.random() * opts.length)]);
-   };
- 
-   const generateFullRandom = () => {
-     const newForm = { ...formData };
-     if (!newForm.subject) newForm.subject = "A futuristic city floating in the clouds";
-     Object.keys(PRESETS).forEach(key => {
-       const opts = PRESETS[key];
-       if (['medium', 'style', 'documentType'].includes(key) || Math.random() > 0.3) {
-          newForm[key] = opts[Math.floor(Math.random() * opts.length)];
-       } else {
-          newForm[key] = "";
-       }
-     });
-     newForm.stylize = Math.floor(Math.random() * 1000);
-     newForm.seed = Math.floor(Math.random() * 1000000000).toString();
-     setFormData(newForm);
-     setPolishedPrompt("");
-   };
- 
-   const clearForm = () => {
-     setFormData({
+     const [formData, setFormData] = useState({
        subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
        composition: "", resolution: "", colorPalette: "", mood: "", 
        time: "", season: "", aspectRatio: "", stylize: 50, seed: "",
-       documentType: "", typography: "", era: "", material: ""
+       documentType: "", typography: "", era: "", material: "",
+       chaos: 0, weird: 0, tile: false
      });
-     setPolishedPrompt("");
-   };
- 
-   const constructPromptString = () => {
-     return [
-       formData.documentType,
-       formData.medium,
-       formData.subject ? `of ${formData.subject}` : '',
-       formData.style ? `, ${formData.style} style` : '',
-       formData.era ? `, ${formData.era} aesthetic` : '',
-       formData.artist ? `, by ${formData.artist}` : '',
-       formData.material ? `, printed on ${formData.material}` : '',
-       formData.lighting ? `, ${formData.lighting}` : '',
-       formData.camera ? `, shot on ${formData.camera}` : '',
-       formData.composition ? `, ${formData.composition}` : '',
-       formData.typography ? `, with ${formData.typography} text` : '',
-       formData.colorPalette ? `, ${formData.colorPalette} colors` : '',
-       formData.mood ? `, ${formData.mood} atmosphere` : '',
-       formData.time ? `, ${formData.time}` : '',
-       formData.season ? `, ${formData.season}` : '',
-       formData.resolution ? `, ${formData.resolution}` : '',
-       formData.aspectRatio ? `--ar ${formData.aspectRatio}` : '',
-       formData.stylize ? `--s ${formData.stylize}` : '',
-       formData.negativePrompt ? `--no ${formData.negativePrompt}` : ''
-     ].filter(Boolean).join(" ");
-   };
- const polishWithAI = async () => {
+   
+     useEffect(() => {
+       const storedKey = localStorage.getItem('gemini_api_key');
+       const storedModel = localStorage.getItem('gemini_api_model');
+       if (storedKey) setApiKey(storedKey);
+       if (storedModel) setApiModel(storedModel);
+     }, []);
+   
+     const handleAccordion = (id) => setActiveSection(prev => prev === id ? null : id);
+     const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+   
+     const saveSettings = (key, model) => {
+       localStorage.setItem('gemini_api_key', key);
+       localStorage.setItem('gemini_api_model', model);
+       setApiKey(key);
+       setApiModel(model);
+       setShowApiModal(false);
+     };
+   
+     const applyRecipe = (recipeData) => {
+       setFormData(prev => ({
+         ...prev,
+         ...recipeData,
+         // Preserve subject and negative prompt if they exist, or keep them blank
+         subject: prev.subject,
+         negativePrompt: prev.negativePrompt
+       }));
+     };
+   
+     const randomizeField = (field) => {
+       const opts = PRESETS[field];
+       if (opts) updateField(field, opts[Math.floor(Math.random() * opts.length)]);
+     };
+   
+     const generateFullRandom = () => {
+       const newForm = { ...formData };
+       if (!newForm.subject) newForm.subject = "A futuristic city floating in the clouds";
+       Object.keys(PRESETS).forEach(key => {
+         const opts = PRESETS[key];
+         if (['medium', 'style', 'documentType'].includes(key) || Math.random() > 0.3) {
+            newForm[key] = opts[Math.floor(Math.random() * opts.length)];
+         } else {
+            newForm[key] = "";
+         }
+       });
+       newForm.stylize = Math.floor(Math.random() * 1000);
+       newForm.chaos = Math.random() > 0.7 ? Math.floor(Math.random() * 100) : 0;
+       newForm.weird = Math.random() > 0.8 ? Math.floor(Math.random() * 1000) : 0;
+       newForm.seed = Math.floor(Math.random() * 1000000000).toString();
+       setFormData(newForm);
+       setPolishedPrompt("");
+     };
+   
+     const clearForm = () => {
+       setFormData({
+         subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
+         composition: "", resolution: "", colorPalette: "", mood: "", 
+         time: "", season: "", aspectRatio: "", stylize: 50, seed: "",
+         documentType: "", typography: "", era: "", material: "",
+         chaos: 0, weird: 0, tile: false
+       });
+       setPolishedPrompt("");
+     };
+   
+     const constructPromptString = () => {
+       return [
+         formData.documentType,
+         formData.medium,
+         formData.subject ? `of ${formData.subject}` : '',
+         formData.style ? `, ${formData.style} style` : '',
+         formData.era ? `, ${formData.era} aesthetic` : '',
+         formData.artist ? `, by ${formData.artist}` : '',
+         formData.material ? `, printed on ${formData.material}` : '',
+         formData.lighting ? `, ${formData.lighting}` : '',
+         formData.camera ? `, shot on ${formData.camera}` : '',
+         formData.composition ? `, ${formData.composition}` : '',
+         formData.typography ? `, with ${formData.typography} text` : '',
+         formData.colorPalette ? `, ${formData.colorPalette} colors` : '',
+         formData.mood ? `, ${formData.mood} atmosphere` : '',
+         formData.time ? `, ${formData.time}` : '',
+         formData.season ? `, ${formData.season}` : '',
+         formData.resolution ? `, ${formData.resolution}` : '',
+         formData.aspectRatio ? `--ar ${formData.aspectRatio}` : '',
+         formData.stylize > 0 ? `--s ${formData.stylize}` : '',
+         formData.chaos > 0 ? `--c ${formData.chaos}` : '',
+         formData.weird > 0 ? `--w ${formData.weird}` : '',
+         formData.tile ? `--tile` : '',
+         formData.negativePrompt ? `--no ${formData.negativePrompt}` : ''
+       ].filter(Boolean).join(" ");
+     }; const polishWithAI = async () => {
    if (!apiKey) { setShowApiModal(true); return; }
    setIsPolishing(true);
    setAiError(null);
@@ -468,11 +493,26 @@ export default function App() {
          </div>
        </div>
      </header>
-     <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-       <div className="lg:col-span-5 space-y-2">
-         <div className="mb-4 space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Main Subject</label>
+           <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+             <div className="lg:col-span-5 space-y-2">
+               
+               <div className="mb-4">
+                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-2"><Sparkles size={12} className="text-yellow-400" /> Quick Start Recipes</label>
+                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                   {RECIPES.map((recipe) => (
+                     <button
+                       key={recipe.name}
+                       onClick={() => applyRecipe(recipe.data)}
+                       className="flex-shrink-0 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full px-4 py-1.5 text-xs font-medium text-slate-300 whitespace-nowrap transition-colors flex items-center gap-2"
+                     >
+                       <span>{recipe.icon}</span> {recipe.name}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+     
+               <div className="mb-4 space-y-4">
+                  <div>              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Main Subject</label>
               <textarea 
                  value={formData.subject} onChange={(e) => updateField('subject', e.target.value)}
                  placeholder="Describe the core subject (e.g., A futuristic samurai in a rain-soaked alley...)"
@@ -514,12 +554,28 @@ export default function App() {
              <InputGroup label="Aspect Ratio" value={formData.aspectRatio} options={PRESETS.aspectRatios} onChange={(v) => updateField('aspectRatio', v)} onRandomize={() => { const opts = PRESETS.aspectRatios; updateField('aspectRatio', opts[Math.floor(Math.random() * opts.length)]); }} />
            </div>
          </Section>
-          <Section id="details" title="Advanced & Parameters" icon={Sliders} activeSection={activeSection} onToggle={handleAccordion}>
-           <InputGroup label="Color Palette" value={formData.colorPalette} options={PRESETS.colorPalette} onChange={(v) => updateField('colorPalette', v)} onRandomize={() => randomizeField('colorPalette')} />
-           <RangeSlider label="Stylize / Chaos (0-1000)" value={formData.stylize} min="0" max="1000" step="10" onChange={(v) => updateField('stylize', v)} />
-           <div className="mb-4">
-             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Seed</label>
-             <div className="flex gap-2">
+                    <Section id="details" title="Advanced & Parameters" icon={Sliders} activeSection={activeSection} onToggle={handleAccordion}>
+                      <InputGroup label="Color Palette" value={formData.colorPalette} options={PRESETS.colorPalette} onChange={(v) => updateField('colorPalette', v)} onRandomize={() => randomizeField('colorPalette')} />
+                      
+                      <div className="space-y-4 mb-4">
+                        <RangeSlider label="Stylize (0-1000)" value={formData.stylize} min="0" max="1000" step="10" onChange={(v) => updateField('stylize', v)} />
+                        <RangeSlider label="Chaos (0-100)" value={formData.chaos} min="0" max="100" step="1" onChange={(v) => updateField('chaos', v)} />
+                        <RangeSlider label="Weird (0-3000)" value={formData.weird} min="0" max="3000" step="50" onChange={(v) => updateField('weird', v)} />
+                        
+                        <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <Layers size={16} className="text-slate-400" />
+                            <span className="text-sm font-medium text-slate-200">Tile Mode (Seamless Pattern)</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={formData.tile} onChange={(e) => updateField('tile', e.target.checked)} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      </div>
+          
+                      <div className="mb-4">
+                        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Seed</label>             <div className="flex gap-2">
                 <input type="text" value={formData.seed} onChange={(e) => updateField('seed', e.target.value)} placeholder="Random seed..." className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-200 outline-none" />
                 <button onClick={() => updateField('seed', Math.floor(Math.random() * 1000000000).toString())} className="p-2 bg-slate-800 rounded hover:bg-slate-700"><RefreshCw size={14} /></button>
              </div>
