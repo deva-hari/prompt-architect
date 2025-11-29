@@ -21,11 +21,11 @@ import {
  Key,
  Wand2,
  Ban,
- Maximize,
- Sliders,
- Cpu
-} from 'lucide-react';
-
+   Maximize,
+   Sliders,
+   Cpu,
+   Layout
+  } from 'lucide-react';
 // --- DATA DICTIONARIES ---
 
 const PRESETS = {
@@ -53,12 +53,12 @@ const PRESETS = {
    "85mm Portrait Lens", "200mm Telephoto", "Wide Angle", "Tilt-Shift",
    "Thermal Camera", "Night Vision", "Disposable Camera"
  ],
- composition: [
-   "Rule of Thirds", "Symmetrical", "Centered", "Golden Ratio", "Dutch Angle", 
-   "Bird's Eye View", "Worm's Eye View", "Close-up", "Extreme Close-up", "Panorama", 
-   "Negative Space", "Leading Lines", "Framing", "Chaotic", "Knolling"
- ],
- resolution: [
+   composition: [
+     "Rule of Thirds", "Symmetrical", "Centered", "Golden Ratio", "Dutch Angle", 
+     "Bird's Eye View", "Worm's Eye View", "Close-up", "Extreme Close-up", "Panorama", 
+     "Negative Space", "Leading Lines", "Framing", "Chaotic", "Knolling",
+     "Grid Layout", "Hero Image with Text Space", "Split Screen", "Collage", "Infographic Style", "Flat Lay"
+   ], resolution: [
    "4K", "8K", "HD", "Full HD", "Ultra Photorealistic", "Unreal Engine 5", 
    "Octane Render", "Ray Tracing", "High Fidelity", "Detailed Textures",
    "Gigapixel", "Raw Photo"
@@ -84,13 +84,33 @@ const PRESETS = {
  artists: [
    "Greg Rutkowski", "Alphonse Mucha", "Zdzisław Beksiński", "Hokusai", "Van Gogh",
    "Da Vinci", "Rembrandt", "Salvador Dali", "Simon Stålenhag", "Beeple",
-   "Artgerm", "Loish", "Wlop", "Rossdraws", "Krenz Cushart"
- ],
- aspectRatios: [
-   "1:1", "16:9", "9:16", "4:3", "3:4", "2:1", "21:9"
- ]
-};
-
+       "Artgerm", "Loish", "Wlop", "Rossdraws", "Krenz Cushart"
+     ],
+     aspectRatios: [
+       "1:1", "16:9", "9:16", "4:3", "3:4", "2:1", "21:9"
+     ],
+     documentType: [
+       "Vintage Newspaper", "Tabloid Front Page", "Magazine Advertisement", "Movie Poster", 
+       "Product Brochure", "Street Billboard", "Instagram Story", "Book Cover", 
+       "Restaurant Menu", "Wanted Poster", "Scientific Journal", "Comic Book Page", 
+       "Tarot Card", "Vinyl Album Cover", "Passport Stamp", "Business Card"
+     ],
+     typography: [
+       "Bold Sans-Serif Headline", "Elegant Serif", "Retro 50s Script", "Gothic Lettering", 
+       "Neon Signage", "Typewriter Font", "Graffiti", "Minimalist Modern", 
+       "Handwritten Notes", "Chalkboard Text", "Calligraphy", "Bauhaus Typography"
+     ],
+     era: [
+       "1920s Art Deco", "1950s Americana", "1980s Synthwave", "Victorian", 
+       "Y2K Aesthetic", "Modern Corporate", "Grunge 90s", "Industrial", 
+       "Futuristic", "Medieval", "Renaissance", "Space Age", "Mid-Century Modern"
+     ],
+     material: [
+       "Yellowed Newsprint", "Glossy Magazine Paper", "Crumpled Paper", "Thick Cardstock", 
+       "Old Parchment", "Blueprint Paper", "Polaroid Film", "Holographic Foil", 
+       "Canvas Texture", "Cardboard", "Vellum", "Matte Photo Paper"
+     ]
+    };
 // --- HELPER FUNCTIONS ---
 
 const generateYaml = (data) => {
@@ -303,81 +323,86 @@ export default function App() {
  const [aiError, setAiError] = useState(null);
  const [polishedPrompt, setPolishedPrompt] = useState("");
  
- const [formData, setFormData] = useState({
-   subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
-   composition: "", resolution: "", colorPalette: "", mood: "", 
-   time: "", season: "", aspectRatio: "", stylize: 50, seed: ""
- });
-
- useEffect(() => {
-   const storedKey = localStorage.getItem('gemini_api_key');
-   const storedModel = localStorage.getItem('gemini_api_model');
-   if (storedKey) setApiKey(storedKey);
-   if (storedModel) setApiModel(storedModel);
- }, []);
-
- const handleAccordion = (id) => setActiveSection(prev => prev === id ? null : id);
- const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
-
- const saveSettings = (key, model) => {
-   localStorage.setItem('gemini_api_key', key);
-   localStorage.setItem('gemini_api_model', model);
-   setApiKey(key);
-   setApiModel(model);
-   setShowApiModal(false);
- };
-
- const randomizeField = (field) => {
-   const opts = PRESETS[field];
-   if (opts) updateField(field, opts[Math.floor(Math.random() * opts.length)]);
- };
-
- const generateFullRandom = () => {
-   const newForm = { ...formData };
-   if (!newForm.subject) newForm.subject = "A futuristic city floating in the clouds";
-   Object.keys(PRESETS).forEach(key => {
-     const opts = PRESETS[key];
-     if (['medium', 'style'].includes(key) || Math.random() > 0.3) {
-        newForm[key] = opts[Math.floor(Math.random() * opts.length)];
-     } else {
-        newForm[key] = "";
-     }
-   });
-   newForm.stylize = Math.floor(Math.random() * 1000);
-   newForm.seed = Math.floor(Math.random() * 1000000000).toString();
-   setFormData(newForm);
-   setPolishedPrompt("");
- };
-
- const clearForm = () => {
-   setFormData({
+   const [formData, setFormData] = useState({
      subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
      composition: "", resolution: "", colorPalette: "", mood: "", 
-     time: "", season: "", aspectRatio: "", stylize: 50, seed: ""
+     time: "", season: "", aspectRatio: "", stylize: 50, seed: "",
+     documentType: "", typography: "", era: "", material: ""
    });
-   setPolishedPrompt("");
- };
-
- const constructPromptString = () => {
-   return [
-     formData.medium,
-     formData.subject ? `of ${formData.subject}` : '',
-     formData.style ? `, ${formData.style} style` : '',
-     formData.artist ? `, by ${formData.artist}` : '',
-     formData.lighting ? `, ${formData.lighting}` : '',
-     formData.camera ? `, shot on ${formData.camera}` : '',
-     formData.composition ? `, ${formData.composition}` : '',
-     formData.colorPalette ? `, ${formData.colorPalette} colors` : '',
-     formData.mood ? `, ${formData.mood} atmosphere` : '',
-     formData.time ? `, ${formData.time}` : '',
-     formData.season ? `, ${formData.season}` : '',
-     formData.resolution ? `, ${formData.resolution}` : '',
-     formData.aspectRatio ? `--ar ${formData.aspectRatio}` : '',
-     formData.stylize ? `--s ${formData.stylize}` : '',
-     formData.negativePrompt ? `--no ${formData.negativePrompt}` : ''
-   ].filter(Boolean).join(" ");
- };
-
+ 
+   useEffect(() => {
+     const storedKey = localStorage.getItem('gemini_api_key');
+     const storedModel = localStorage.getItem('gemini_api_model');
+     if (storedKey) setApiKey(storedKey);
+     if (storedModel) setApiModel(storedModel);
+   }, []);
+ 
+   const handleAccordion = (id) => setActiveSection(prev => prev === id ? null : id);
+   const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+ 
+   const saveSettings = (key, model) => {
+     localStorage.setItem('gemini_api_key', key);
+     localStorage.setItem('gemini_api_model', model);
+     setApiKey(key);
+     setApiModel(model);
+     setShowApiModal(false);
+   };
+ 
+   const randomizeField = (field) => {
+     const opts = PRESETS[field];
+     if (opts) updateField(field, opts[Math.floor(Math.random() * opts.length)]);
+   };
+ 
+   const generateFullRandom = () => {
+     const newForm = { ...formData };
+     if (!newForm.subject) newForm.subject = "A futuristic city floating in the clouds";
+     Object.keys(PRESETS).forEach(key => {
+       const opts = PRESETS[key];
+       if (['medium', 'style', 'documentType'].includes(key) || Math.random() > 0.3) {
+          newForm[key] = opts[Math.floor(Math.random() * opts.length)];
+       } else {
+          newForm[key] = "";
+       }
+     });
+     newForm.stylize = Math.floor(Math.random() * 1000);
+     newForm.seed = Math.floor(Math.random() * 1000000000).toString();
+     setFormData(newForm);
+     setPolishedPrompt("");
+   };
+ 
+   const clearForm = () => {
+     setFormData({
+       subject: "", negativePrompt: "", medium: "", style: "", artist: "", lighting: "", camera: "", 
+       composition: "", resolution: "", colorPalette: "", mood: "", 
+       time: "", season: "", aspectRatio: "", stylize: 50, seed: "",
+       documentType: "", typography: "", era: "", material: ""
+     });
+     setPolishedPrompt("");
+   };
+ 
+   const constructPromptString = () => {
+     return [
+       formData.documentType,
+       formData.medium,
+       formData.subject ? `of ${formData.subject}` : '',
+       formData.style ? `, ${formData.style} style` : '',
+       formData.era ? `, ${formData.era} aesthetic` : '',
+       formData.artist ? `, by ${formData.artist}` : '',
+       formData.material ? `, printed on ${formData.material}` : '',
+       formData.lighting ? `, ${formData.lighting}` : '',
+       formData.camera ? `, shot on ${formData.camera}` : '',
+       formData.composition ? `, ${formData.composition}` : '',
+       formData.typography ? `, with ${formData.typography} text` : '',
+       formData.colorPalette ? `, ${formData.colorPalette} colors` : '',
+       formData.mood ? `, ${formData.mood} atmosphere` : '',
+       formData.time ? `, ${formData.time}` : '',
+       formData.season ? `, ${formData.season}` : '',
+       formData.resolution ? `, ${formData.resolution}` : '',
+       formData.aspectRatio ? `--ar ${formData.aspectRatio}` : '',
+       formData.stylize ? `--s ${formData.stylize}` : '',
+       formData.negativePrompt ? `--no ${formData.negativePrompt}` : ''
+     ].filter(Boolean).join(" ");
+   };
  const polishWithAI = async () => {
    if (!apiKey) { setShowApiModal(true); return; }
    setIsPolishing(true);
@@ -463,13 +488,18 @@ export default function App() {
               />
             </div>
          </div>
-         <Section id="core" title="Core Aesthetics" icon={Palette} activeSection={activeSection} onToggle={handleAccordion}>
-           <InputGroup label="Medium" value={formData.medium} options={PRESETS.medium} onChange={(v) => updateField('medium', v)} onRandomize={() => randomizeField('medium')} />
-           <InputGroup label="Style" value={formData.style} options={PRESETS.style} onChange={(v) => updateField('style', v)} onRandomize={() => randomizeField('style')} />
-            <InputGroup label="Artist / Reference" value={formData.artist} options={PRESETS.artists} onChange={(v) => updateField('artist', v)} onRandomize={() => randomizeField('artist')} />
-         </Section>
-         <Section id="lighting" title="Lighting & Atmosphere" icon={Sun} activeSection={activeSection} onToggle={handleAccordion}>
-           <InputGroup label="Lighting Type" value={formData.lighting} options={PRESETS.lighting} onChange={(v) => updateField('lighting', v)} onRandomize={() => randomizeField('lighting')} />
+                   <Section id="core" title="Core Aesthetics" icon={Palette} activeSection={activeSection} onToggle={handleAccordion}>
+                     <InputGroup label="Medium" value={formData.medium} options={PRESETS.medium} onChange={(v) => updateField('medium', v)} onRandomize={() => randomizeField('medium')} />
+                     <InputGroup label="Style" value={formData.style} options={PRESETS.style} onChange={(v) => updateField('style', v)} onRandomize={() => randomizeField('style')} />
+                      <InputGroup label="Artist / Reference" value={formData.artist} options={PRESETS.artists} onChange={(v) => updateField('artist', v)} onRandomize={() => randomizeField('artist')} />
+                   </Section>
+                   <Section id="design" title="Design & Layout" icon={Layout} activeSection={activeSection} onToggle={handleAccordion}>
+                     <InputGroup label="Document Type" value={formData.documentType} options={PRESETS.documentType} onChange={(v) => updateField('documentType', v)} onRandomize={() => randomizeField('documentType')} />
+                     <InputGroup label="Era / Aesthetic" value={formData.era} options={PRESETS.era} onChange={(v) => updateField('era', v)} onRandomize={() => randomizeField('era')} />
+                     <InputGroup label="Material / Paper" value={formData.material} options={PRESETS.material} onChange={(v) => updateField('material', v)} onRandomize={() => randomizeField('material')} />
+                     <InputGroup label="Typography" value={formData.typography} options={PRESETS.typography} onChange={(v) => updateField('typography', v)} onRandomize={() => randomizeField('typography')} />
+                   </Section>
+                   <Section id="lighting" title="Lighting & Atmosphere" icon={Sun} activeSection={activeSection} onToggle={handleAccordion}>           <InputGroup label="Lighting Type" value={formData.lighting} options={PRESETS.lighting} onChange={(v) => updateField('lighting', v)} onRandomize={() => randomizeField('lighting')} />
             <InputGroup label="Mood" value={formData.mood} options={PRESETS.mood} onChange={(v) => updateField('mood', v)} onRandomize={() => randomizeField('mood')} />
            <div className="grid grid-cols-2 gap-3">
              <InputGroup label="Time" value={formData.time} options={PRESETS.time} onChange={(v) => updateField('time', v)} onRandomize={() => randomizeField('time')} />
